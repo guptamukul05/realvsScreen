@@ -216,3 +216,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-specific
+real/*
+screen/*
+!real/.gitkeep
+!screen/.gitkeep
+test/
+
+# Model weights (optional - see note below)
+# weights.json
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Flask
+instance/
+*.log
