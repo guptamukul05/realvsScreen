@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spot the Fake Photo — Live Demo</title>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #111;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+  }
+  h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 4px; }
+  p.sub { color: #888; margin-top: 0; margin-bottom: 20px; font-size: 0.9rem; }
+  video, canvas { border-radius: 10px; }
+  #video { width: 480px; max-width: 90vw; }
+  #result {
+    margin-top: 20px;
+    padding: 16px 24px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    text-align: center;
+    min-width: 300px;
+    transition: background 0.2s ease;
+    background: #222;
+  }
+  #score { font-size: 2rem; font-weight: 700; margin: 8px 0; }
+  #label { font-size: 1.2rem; font-weight: 600; }
+  .real { color: #4ade80; }
+  .screen { color: #f87171; }
+  #meta { color: #888; font-size: 0.8rem; margin-top: 10px; }
+  button {
+    margin-top: 16px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #3b82f6;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button:disabled { background: #555; cursor: default; }
+</style>
+</head>
+<body>
+
+<h1>Spot the Fake Photo — Live Demo</h1>
+<p class="sub">Point the camera at a real object, then at a phone/laptop screen, and compare.</p>
+
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<button id="toggleBtn">Start Live Scoring</button>
+
+<div id="result">
+  <div id="label">Waiting for camera…</div>
+  <div id="score">—</div>
+  <div id="meta"></div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const resultBox = document.getElementById('result');
+const labelEl = document.getElementById('label');
+const scoreEl = document.getElementById('score');
+const metaEl = document.getElementById('meta');
+const toggleBtn = document.getElementById('toggleBtn');
+
+let running = false;
+let intervalId = null;
+
+navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 } })
+  .then(stream => {
+    video.srcObject = stream;
+    labelEl.textContent = "Camera ready";
+  })
+  .catch(err => {
+    labelEl.textContent = "Camera access denied: " + err.message;
+  });
+
+async function captureAndPredict() {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+  try {
+    const resp = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    const data = await resp.json();
+    if (data.error) {
+      labelEl.textContent = "Error: " + data.error;
+      return;
+    }
+
+    const isScreen = data.score >= 0.5;
+    labelEl.textContent = data.label;
+    labelEl.className = isScreen ? "screen" : "real";
+    scoreEl.textContent = data.score.toFixed(3);
+    scoreEl.className = isScreen ? "screen" : "real";
+    metaEl.textContent = `latency: ${data.latency_ms} ms`;
+  } catch (e) {
+    labelEl.textContent = "Request failed: " + e.message;
+  }
+}
+
+toggleBtn.addEventListener('click', () => {
+  running = !running;
+  if (running) {
+    toggleBtn.textContent = "Stop Live Scoring";
+    intervalId = setInterval(captureAndPredict, 1000);
+  } else {
+    toggleBtn.textContent = "Start Live Scoring";
+    clearInterval(intervalId);
+  }
+});
+</script>
+
+</body>
+</html>
