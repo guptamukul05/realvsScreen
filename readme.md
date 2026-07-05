@@ -37,7 +37,6 @@ An optional module also supports adding a frozen, pretrained CNN embedding as an
 ```
 spotfake/
 ├── features.py       # Core forensic feature extraction
-├── embedding.py       # Optional frozen pretrained-CNN feature (transfer learning)
 ├── train.py          # Fits the model with cross-validation
 ├── predict.py         # Command-line predictor: predict.py image.jpg
 ├── diagnose.py         # Per-feature diagnostics (separation stats, outliers)
@@ -54,8 +53,8 @@ spotfake/
 ### 0. Clone and set up a virtual environment (recommended)
 
 ```bash
-git clone <your-repo-url>
-cd project5
+git clone <https://github.com/guptamukul05/realvsScreen.git>
+cd realvsScreen
 python -m venv venv
 venv\Scripts\activate        # Windows
 source venv/bin/activate     # Mac/Linux
@@ -95,7 +94,7 @@ python diagnose.py --real real/ --screen screen/
 
 Shows how well each individual feature separates the two classes on your data, useful before adding or removing features.
 
-### 6. (Optional) Run the live demo
+### 6. Run the live demo
 
 ```bash
 pip install flask
@@ -103,12 +102,6 @@ python app.py
 ```
 
 Then open `http://localhost:5000` in a browser, allow camera access, and click "Start Live Scoring" to see predictions update live from your webcam.
-
-## 🛠️ Extending This Project
-
-- Add new features to `features.py` and check their impact with `diagnose.py` before wiring them into the model — this keeps the pipeline honest and avoids adding noise disguised as signal.
-- Enable the optional pretrained-embedding feature in `train.py` with the `--use-embedding` flag if you want to experiment with transfer learning as an additional signal source.
-- The modular structure makes it straightforward to swap in a different classifier, add new forensic cues, or adapt the pipeline to related image-authenticity problems.
 
 ## 📄 License
 
